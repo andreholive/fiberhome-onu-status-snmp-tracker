@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/static/css/main.ea53f36f.css",
+    "main.js": "/static/js/main.92208151.js",
+    "static/js/787.0e8c3f21.chunk.js": "/static/js/787.0e8c3f21.chunk.js",
+    "static/media/pontonet.webp": "/static/media/pontonet.da564a0470def20b8e7e.webp",
+    "index.html": "/index.html",
+    "main.ea53f36f.css.map": "/static/css/main.ea53f36f.css.map",
+    "main.92208151.js.map": "/static/js/main.92208151.js.map",
+    "787.0e8c3f21.chunk.js.map": "/static/js/787.0e8c3f21.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.ea53f36f.css",
+    "static/js/main.92208151.js"
+  ]
+}
