@@ -2,8 +2,9 @@ const snmp = require('net-snmp');
 const axios = require('axios');
 const Queue = require("promise-queue");
 Queue.configure(require('vow').Promise);
+const config = require('./config.json');
 
-const token = "30:6a1476077704431d68d6d3665d288159150862f9b8b47e646d4c3aecf37b4e1f";
+const token = config.token;
 
 function getHeader(){
     return {headers:{'Content-Type': 'application/json',
@@ -31,7 +32,7 @@ async function get(oids, options) {
 
 async function getLogin(mac) {
         
-    const url = "https://ixc.pontonetsul.com.br/webservice/v1/radusuarios";
+    const url = config.ixc_api+"/webservice/v1/radusuarios";
         const body =
             { 
             qtype: 'onu_mac',
@@ -47,7 +48,7 @@ async function getLogin(mac) {
 
 async function clienteFibra(mac) {
         
-    const url = "https://ixc.pontonetsul.com.br/webservice/v1/radpop_radio_cliente_fibra";
+    const url = config.ixc_api+"/webservice/v1/radpop_radio_cliente_fibra";
         const body =
             { 
             qtype: 'mac',
@@ -63,7 +64,7 @@ async function clienteFibra(mac) {
 
 async function updateClienteFibra(fibra, caixa, porta) {
     const body = fibra.data.registros[0]; 
-    const url = `https://ixc.pontonetsul.com.br/webservice/v1/radpop_radio_cliente_fibra/${body.id}`;
+    const url = `${config.ixc_api}/webservice/v1/radpop_radio_cliente_fibra/${body.id}`;
     const header = {headers:{'Content-Type': 'application/json',
     Authorization: 'Basic ' + new Buffer.from(token).toString('base64'),
     }}
@@ -75,7 +76,7 @@ async function updateClienteFibra(fibra, caixa, porta) {
 async function updateLogin(data) {
     const login = await getLogin(data.login.onu_mac);
     const fibra = await clienteFibra(data.login.onu_mac);
-    const url = `https://ixc.pontonetsul.com.br/webservice/v1/radusuarios/${data.login.id}`;
+    const url = `${config.ixc_api}/webservice/v1/radusuarios/${data.login.id}`;
     const body = login.data.registros[0];
     const header = {headers:{'Content-Type': 'application/json',
     Authorization: 'Basic ' + new Buffer.from(token).toString('base64'),
@@ -97,7 +98,7 @@ async function updateLogin(data) {
 
 async function getClient(id) {
         
-    const url = "https://ixc.pontonetsul.com.br/webservice/v1/cliente";
+    const url = `${config.ixc_api}/webservice/v1/cliente`;
         const body =
             { 
             qtype: 'cliente.id',
@@ -113,7 +114,7 @@ async function getClient(id) {
 
 async function getLoginsByCTO(id_caixa_ftth) {
         
-    const url = "https://ixc.pontonetsul.com.br/webservice/v1/radusuarios";
+    const url = `${config.ixc_api}/webservice/v1/radusuarios`;
         const body =
             { 
             qtype: 'id_caixa_ftth',
@@ -128,7 +129,7 @@ async function getLoginsByCTO(id_caixa_ftth) {
 }
 
 async function getClientMid(data, next) {
-    const url = "https://ixc.pontonetsul.com.br/webservice/v1/cliente";
+    const url = `${config.ixc_api}/webservice/v1/cliente`;
         const body =
             { 
             qtype: 'cliente.id',
@@ -153,7 +154,7 @@ async function execute(data){
 }
 
 async function getLoginbyClient(client, next) {
-    const url = "https://ixc.pontonetsul.com.br/webservice/v1/radusuarios";
+    const url = `${config.ixc_api}/webservice/v1/radusuarios`;
         const body =
             { 
             qtype: 'id_cliente',
@@ -171,7 +172,7 @@ async function getLoginbyClient(client, next) {
 
 async function busca_cliente(razao) {
     
-    const url = "https://ixc.pontonetsul.com.br/webservice/v1/cliente";
+    const url = `${config.ixc_api}/webservice/v1/cliente`;
         const body =
             { 
             qtype: 'cliente.razao',
@@ -204,7 +205,7 @@ function findOnuinOltsbyMac(olts, mac){
 }
 
 async function busca_caixa(desc, olts) {
-    const url = "https://ixc.pontonetsul.com.br/webservice/v1/rad_caixa_ftth";
+    const url = `${config.ixc_api}/webservice/v1/rad_caixa_ftth`;
     const body =
         { 
         qtype: 'descricao',
