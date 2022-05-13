@@ -7,3 +7,5 @@ qual cliente pertence a determinada ONU que alterou seu estado.
 
 Ao remover o conector da fibra ótica na caixa de atendimento no poste o sistema detecta a mudança de estado a ONU e identifica no IXC o cliente cadastrado pelo FHTT da
 onu que alterou o estado.
+
+![](/tela.jpg)
