@@ -1,6 +1,9 @@
 const fh = require('snmp-fiberhome');
 const snmp = require('./server_pack');
 const {OIDs} = require('./oid-fh');
+const config = require('./config.json');
+const token = config.token;
+const axios = require('axios');
 
 module.exports = class Onu{
     constructor(data){
@@ -14,7 +17,8 @@ module.exports = class Onu{
         this.options = data.options,
         this.login = null;
         this.optical = null;
-        this.cliente = null
+        this.cliente = null;
+        this.fibra = null;
     }
 
 
@@ -29,10 +33,6 @@ module.exports = class Onu{
 
     setLogin(login){
         this.login = login;
-    }
-
-    getLogin(){
-        return this.login;
     }
 
     getOpticalPower() {
@@ -55,28 +55,76 @@ module.exports = class Onu{
         return this;
     }
 
-    async updateLogin(){
-        if(!this.login){
-            var login = await snmp.getLogin(this.macAddress);
-            if(login.data.registros)
-            {
-                this.login = login.data.registros[0];
-                return this.login;
-            }
-            return null;
+    async getLogin(){
+        var login = await snmp.getLogin(this.macAddress);
+        if(login.data.registros)
+        {
+            this.login = login.data.registros[0];
+            return this.login;
         }
+        return false;
+    }
+
+    async getClienteFibra(mac) {
+        
+        const url = config.ixc_api+"/webservice/v1/radpop_radio_cliente_fibra";
+            const body =
+                { 
+                qtype: 'mac',
+                query: mac,
+                oper: '=',
+                page: '1',
+                rp: '1',
+                sortname: 'mac',
+                sortorder: 'desc'
+                };
+        const req = await axios.post(url, body, snmp.getHeader());
+        if(req.data.registros)
+        {
+            this.fibra = req.data.registros[0];
+            return this.fibra;
+        }
+        return false;
+    }
+
+    async updateLogin(login){
+        const url = `${config.ixc_api}/webservice/v1/radusuarios/${login.id}`;
+        const header = {headers:{'Content-Type': 'application/json',
+        Authorization: 'Basic ' + new Buffer.from(token).toString('base64'),
+        }}
+        const update= await axios.put(url, login, header);
+        if(update.data.type == 'success'){
+            await this.getLogin();
+            return true;
+        }
+        return false;
+    }
+
+    async updatePortaClienteFibra(mac, porta) {
+        const cliente_fibra = await this.getClienteFibra(mac);
+        const url = `${config.ixc_api}/webservice/v1/radpop_radio_cliente_fibra/${cliente_fibra.id}`;
+        const header = {headers:{'Content-Type': 'application/json',
+        Authorization: 'Basic ' + new Buffer.from(token).toString('base64'),
+        }}
+        cliente_fibra.porta_ftth = porta;
+        const req = await axios.put(url, cliente_fibra, header);
+        if(req.data.type == 'success'){
+            return true;
+        }
+        return false;
     }
 
     async updateCliente(){
         if(!this.login){
-            await this.updateLogin();
+            await this.getLogin();
         }
-        var cliente = await snmp.getClient(this.login.id_cliente);
-        if(cliente.data.registros[0])
-        {
-            this.cliente = cliente.data.registros[0];
-        }
-            
+        if(!this.cliente){
+            var cliente = await snmp.getClient(this.login.id_cliente);
+            if(cliente.data.registros[0])
+            {
+                this.cliente = cliente.data.registros[0];
+            }
+        }       
     }
 
     async checkOnuStatus(){

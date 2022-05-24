@@ -27,7 +27,6 @@ module.exports = class Olt{
         }
         
     }
-
     /* getOnus() retorna as ONUs desta OLT */
 
     getOnus(){
@@ -67,10 +66,7 @@ module.exports = class Olt{
             if(status == 1){
                 await onu.updateOpticalPower(); 
             }
-            if(!onu.getLogin()){ 
-                await onu.updateCliente(); 
-            }
-            console.log(onu.optical);
+            await onu.updateCliente(); 
             await envia({type: 'connection', data: onu});
             
         }

@@ -120,45 +120,45 @@ display: ${props => props.isOpen ? 'block' : 'none'};
 `;
 
 export function LoginDrag({id, onu, conn, ignore}) {
-  const {attributes, listeners, setNodeRef, transform} = useDraggable({
-    id: id,
-    data: {
-      onu: onu,
-      isConn: conn
-    }
-  });
+const {attributes, listeners, setNodeRef, transform} = useDraggable({
+  id: id,
+  data: {
+    onu: onu,
+    isConn: conn
+  }
+});
 
-  const [isOpen, setIsOpen] = useState(false);
-
+const [isOpen, setIsOpen] = useState(false);
   
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined;
+const style = transform ? {
+  transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+} : undefined;
 
-  const styleOpen = isOpen ? {
-    transform: 'rotate(180deg)' } : undefined;
+const styleOpen = isOpen ? {
+  transform: 'rotate(180deg)' } : undefined;
 
-  function copy(el){
-    let text = document.getElementById(el).innerHTML;
-    navigator.clipboard.writeText(text);
-  }
-
-  function getLoginId(id){
-    navigator.clipboard.writeText(id);
-  }
-
-  function getState(){
-    switch (onu.status) {
-        case 0:
-            return faUnlink;
-        case 1:
-            return faSignal;
-        case 2:
-            return faPlug;
-        default:
-            return 'Status';
-    }
+function copy(el){
+  let text = document.getElementById(el).innerHTML;
+  navigator.clipboard.writeText(text);
 }
+
+function getLoginId(id){
+  navigator.clipboard.writeText(id);
+}
+
+function getState(){
+  switch (onu.status) {
+      case 0:
+          return faUnlink;
+      case 1:
+          return faSignal;
+      case 2:
+          return faPlug;
+      default:
+          return 'Status';
+  }
+}
+
 function getTitleStatus(){
     switch (onu.status) {
       case 0:
@@ -171,8 +171,9 @@ function getTitleStatus(){
           return 'Status';
   }
 }
+
 function getBairro(){
-  if(onu.login.bairro){
+  if(onu.login?.bairro){
     return onu.login.bairro;
   }
   if(onu.cliente?.bairro){
@@ -222,7 +223,7 @@ function openClose(){
       
     <Details isOpen={isOpen}>
     <FontAwesomeIcon icon={faEthernet}/>{onu.macAddress}<br/>
-    <FontAwesomeIcon icon={faAudioDescription}/>{onu.login.ip? onu.login.ip : ''}<br/>
+    <FontAwesomeIcon icon={faAudioDescription}/>{onu.login?.ip ? onu.login.ip : ''}<br/>
     <FontAwesomeIcon icon={getState()}/>{getTitleStatus()}<br/>
     <FontAwesomeIcon icon={faPlug}/>{`${onu.optical ? onu.optical.voltage.value : ''} ${onu.optical ? onu.optical.voltage.unit : ''}`}<br/>
     <FontAwesomeIcon icon={faThermometerHalf}/>{`${onu.optical ? onu.optical.temperature.value : ''} ${onu.optical ? onu.optical.temperature.unit : ''}`}<br/>

@@ -13,6 +13,15 @@ module.exports = class User{
         this.socket.emit(d.type, d.data);
     }
 
+    findOnuByMac(mac){
+        for(const olt of Object.values(this.olts)){
+            const onu = olt.findOnuByMac(mac);
+            if(onu != -1){
+                return onu;
+            }
+        }
+    }
+
     async inDatas(){
         console.log('User Conected!')
         this.socket.on('startScan', async (num) => { //RECEBE COMANDO PARA INICIAR O SCAN DAS ONUS
@@ -27,6 +36,11 @@ module.exports = class User{
             console.log(data)
             const res = await snmp.busca_caixa(data, this.olts);
             this.socket.emit('caixa', res);
+        });
+        this.socket.on('updatePorta', async (login) => {
+            const resp = await this.updatePorta(login);
+            //socket.emit('updatePorta', resp.data);
+            console.log(resp)
         });
     }
 
@@ -54,6 +68,20 @@ module.exports = class User{
                 
         }
         await exec(0)
+    }
+
+    async updatePorta(login){
+        const onu = this.findOnuByMac(login.onu_mac);
+        const update = await onu.updatePortaClienteFibra(login.onu_mac, login.ftth_porta);
+        if(update){
+            const update_login = await onu.updateLogin(login);
+            if(update_login){
+                console.log('Login '+login.login+' Atualizado');
+                return true;
+            }
+            return false;
+        }
+        return false;
     }
 
     

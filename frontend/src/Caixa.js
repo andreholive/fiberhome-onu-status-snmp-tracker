@@ -59,7 +59,6 @@ const [disabled, setDisabled] = useState(false);
 
 useEffect(async () => {
     socket.on('caixa', data => {
-        console.log(data);
         insertCaixa(data);
     });
 },[]);
@@ -76,6 +75,7 @@ useEffect(async () => {
   }
 
   function insertCaixa(data){
+    console.log(data)
     const caixa = data.caixa;
     if(caixa){
       const portas = data.caixa.capacidade;

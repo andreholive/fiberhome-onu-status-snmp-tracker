@@ -46,63 +46,6 @@ async function getLogin(mac) {
     return await axios.post(url, body, getHeader());
 }
 
-async function getClienteFibra(mac) {
-        
-    const url = config.ixc_api+"/webservice/v1/radpop_radio_cliente_fibra";
-        const body =
-            { 
-            qtype: 'mac',
-            query: mac,
-            oper: '=',
-            page: '1',
-            rp: '1',
-            sortname: 'mac',
-            sortorder: 'desc'
-            };
-    const req = await axios.post(url, body, getHeader());
-    return req.data.registros[0];
-}
-
-async function updatePortaClienteFibra(mac, porta) {
-    const cliente_fibra = await getClienteFibra(mac);
-    const url = `${config.ixc_api}/webservice/v1/radpop_radio_cliente_fibra/${cliente_fibra.id}`;
-    const header = {headers:{'Content-Type': 'application/json',
-    Authorization: 'Basic ' + new Buffer.from(token).toString('base64'),
-    }}
-    cliente_fibra.porta_ftth = porta;
-    const req = await axios.put(url, cliente_fibra, header);
-    if(req.data.type == 'success'){
-        return true;
-    }
-    return false;
-}
-
-async function updatePortaLogin(login){
-    const url = `${config.ixc_api}/webservice/v1/radusuarios/${login.id}`;
-    const header = {headers:{'Content-Type': 'application/json',
-    Authorization: 'Basic ' + new Buffer.from(token).toString('base64'),
-    }}
-    const update= await axios.put(url, login, header);
-    if(update.data.type == 'success'){
-        return true;
-    }
-    return false;
-}
-
-
-async function updatePorta(login){
-    const update = await updatePortaClienteFibra(login.onu_mac, login.ftth_porta);
-    if(update){
-        const update_login = await updatePortaLogin(login);
-        if(update_login){
-            console.log('Login '+login.login+' Atualizado');
-            return true;
-        }
-        return false;
-    }
-    return false;
-}
-
 async function getClient(id) {
         
     const url = `${config.ixc_api}/webservice/v1/cliente`;
@@ -133,31 +76,6 @@ async function getLoginsByCTO(id_caixa_ftth) {
             sortorder: 'desc'
             };
     return await axios.post(url, body, getHeader());
-}
-
-async function getClientMid(data, next) {
-    const url = `${config.ixc_api}/webservice/v1/cliente`;
-        const body =
-            { 
-            qtype: 'cliente.id',
-            query: data.id_cliente,
-            oper: '=',
-            page: '1',
-            rp: '1',
-            sortname: 'cliente.id',
-            sortorder: 'desc'
-            };
-    const res =  await axios.post(url, body, getHeader());
-    data.cliente = res.data.registros[0];
-    await next();
-}
-
-async function execute(data){
-    const exec = async i =>{
-        data && i < data.length &&
-            await getClientMid(data[i], async () => await exec(i+1))
-    }
-    await exec(0)
 }
 
 async function getLoginbyClient(client, next) {
@@ -233,9 +151,10 @@ async function busca_caixa(desc, olts) {
                 if(logins && i < logins.length){
                     const onu = findOnuinOltsbyMac(olts, logins[i].onu_mac);
                     await onu.updateStatus();
-                    await onu.updateLogin();
+                    await onu.getLogin();
                     await onu.updateCliente();
                     onus.push(onu);
+                    console.log(onu.login.ftth_porta)
                     await exec(i+1);
                 }
             }
@@ -255,7 +174,7 @@ module.exports = {
     getLogin,
     getClient,
     busca_caixa,
-    updatePorta,
-    busca_cliente
+    busca_cliente,
+    getHeader
     
 }

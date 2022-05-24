@@ -51,7 +51,6 @@ const [isOpen, setIsOpen] = useState(false);
     transform: 'rotate(180deg)' } : undefined;
 
  return (
-    
       <Cliente key={cliente.id} isOpen={isOpen}>
       {logins?.length > 1 ? <OpenBtn onClick={() => openClose()}><FontAwesomeIcon style={styleOpen} icon={faChevronCircleDown}/></OpenBtn> : ''}
       <div onClick={select}>{cliente.razao}</div>

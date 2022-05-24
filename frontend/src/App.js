@@ -94,6 +94,7 @@ function App() {
   
 
   function removeFronConnections(data){
+    console.log(data)
     let arr = [...connections]
     let inList = Object.values(arr).findIndex((con, index) => {
       console.log(con)
@@ -188,67 +189,37 @@ function App() {
     
   }
 
-  function handleDragEnd2(event) {
-    console.log(event.active)
-    let arr = [...caixa];
-    if(event.over){
-      const {over, active} = event;
-      if(over.id === active.id){
-        return;
-      }
-      if(over.id === 'trash'){
-        arr[active.id -1].login = null;
-        setCaixa(arr);
-        active.data.current.onu.login.ftth_porta = '';
-        active.data.current.onu.login.id_caixa_ftth = '';
-        socket.emit('updateLogin', {login: active.data.current.onu.login, porta: over.id});
-        return;
-      }
-      console.log(arr[over.id - 1])
-    if(!arr[over.id - 1].onu){ //verifica slot vazio
-      arr[over.id - 1].onu = active.onu; //coloca o login no slot
-      if(arr[active.id -1]){
-        arr[active.id -1].onu = null; //limpa login do slot anterior
-      }
-      active.id = over.id;
-      active.data.current.onu.login.ftth_porta = over.id;
-      active.data.current.onu.login.id_caixa_ftth = caixaData.caixa.id;
-      socket.emit('updateLogin', {login: active.data.current.onu.login, porta: over.id});
-      if(active.data.current.isConn){
-        removeFronConnections(active.onu) //retira da conexoes
-      }
-      
-    }
-    setCaixa(arr);
-    }
-  }
-
   function handleDragEnd(event) {
+    
     let arr = [...caixa];
     if(event.over){
       const {over, active} = event;
+      let isConn = () => active.data.current.isConn;
       if(over.id === active.id){
         return;
       }
       if(over.id === 'trash'){
-        arr[active.id -1].login = null;
-        setCaixa(arr);
+        if(isConn()){
+          return;
+        }
+        arr[active.id -1].onu = null;
         active.data.current.onu.login.ftth_porta = '';
         active.data.current.onu.login.id_caixa_ftth = '';
-        socket.emit('updateporta', {login: active.data.current.onu.login, porta: over.id});
+        socket.emit('updatePorta', active.data.current.onu.login);
+        setCaixa(arr);
         return;
       }
-      if(!arr[over.id - 1].onu){
-          arr[over.id - 1].onu = active.data.current.onu;
-          arr[active.id -1].onu = null;
-          active.id = over.id;
-          active.data.current.onu.login.ftth_porta = over.id;
-          active.data.current.onu.login.id_caixa_ftth = caixaData.caixa.id;
-          console.log(active, over)
-          socket.emit('updatePorta', active.data.current.onu.login);
-          if(active.data.current.isConn){
-            removeFronConnections(active.onu);
-          }
+      if(!arr[over.id - 1].onu) //verifica slot vazio
+      {
+        if(!isConn())arr[active.id -1].onu = null;
+        arr[over.id - 1].onu = active.data.current.onu;
+        active.id = over.id;
+        active.data.current.onu.login.ftth_porta = over.id;
+        active.data.current.onu.login.id_caixa_ftth = caixaData.caixa.id;
+        if(isConn()){
+          removeFronConnections(active.data.current.onu);
+        }
+        socket.emit('updatePorta', active.data.current.onu.login);
       }
       setCaixa(arr);
     }
@@ -313,10 +284,9 @@ function App() {
       ))}
     </select>
     <div className='scans'>{scanNumber}</div>
-      
     <Clients>
     {connections.map(onu => (
-        <LoginDrag id={onu.login.id} onu={onu} key={onu.login.id} conn={true} ignore={removeFronConnections}/>
+        <LoginDrag id={onu.login?.id ? onu.login.id : onu.macAddress} onu={onu} key={onu.login?.id ? onu.login.id : onu.macAddress} conn={true} ignore={removeFronConnections}/>
       ))}
     </Clients>
     </Conections>

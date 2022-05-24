@@ -44,12 +44,6 @@ sockets.on('connection', (socket) => {
         socket.emit('login', onuData);
     });
 
-    socket.on('updatePorta', async (data) => {
-        const resp = await snmp.updatePorta(data);
-        //socket.emit('updatePorta', resp.data);
-        console.log(resp)
-    });
-
     socket.on('disconnect', () => {
         users[num].stopScan()
         delete users[num];
