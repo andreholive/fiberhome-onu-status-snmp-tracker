@@ -24,6 +24,7 @@ module.exports = class User{
             }
         });
         this.socket.on('caixa', async (data) => {
+            console.log(data)
             const res = await snmp.busca_caixa(data, this.olts);
             this.socket.emit('caixa', res);
         });
@@ -43,7 +44,8 @@ module.exports = class User{
     }
 
     async scan(olt){ //INICIA O SCAN E MANTEM ATÉ QUE SEJA PARADO
-        console.log('Scanning', this.test)
+        console.log('Scanning', this.test);
+        this.socket.emit('scan', this.test);
         this.test++;
         const exec = async i =>{
             if(this.scanning && olt.onus && i < Object.keys(olt.onus).length){

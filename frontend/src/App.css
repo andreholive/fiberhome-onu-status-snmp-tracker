@@ -129,4 +129,30 @@ section {
 	border-radius: 5px;
 }
 
+.scans{
+  position: relative;
+  float: left;
+  width: auto;
+  height: 30px;
+  font-size: 30px;
+  color: #0028ff;
+  align-items: center;
+  display: flex;
+  margin-left: 10px;
+}
+
+.select-cidade {
+    width: 145px;
+    height: 30px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #CCC;
+    margin: 6px;
+    border: 1px solid #CCC;
+    border-radius: 5px;
+    position: relative;
+    float: left;
+  
+}
+
 

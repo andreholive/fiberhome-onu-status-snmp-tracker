@@ -119,12 +119,11 @@ margin: 4px;
 display: ${props => props.isOpen ? 'block' : 'none'};
 `;
 
-export function LoginDrag({id, item, conn, ignore}) {
+export function LoginDrag({id, onu, conn, ignore}) {
   const {attributes, listeners, setNodeRef, transform} = useDraggable({
     id: id,
     data: {
-      login: item,
-      cliente: item.cliente,
+      onu: onu,
       isConn: conn
     }
   });
@@ -149,7 +148,7 @@ export function LoginDrag({id, item, conn, ignore}) {
   }
 
   function getState(){
-    switch (item.onu_data.status) {
+    switch (onu.status) {
         case 0:
             return faUnlink;
         case 1:
@@ -161,11 +160,11 @@ export function LoginDrag({id, item, conn, ignore}) {
     }
 }
 function getTitleStatus(){
-    switch (item.onu_data.status) {
+    switch (onu.status) {
       case 0:
           return 'LOS';
       case 1:
-          return `${item.onu_data.optical?.rxPower.value} ${item.onu_data.optical?.rxPower.unit}`;
+          return `${onu.optical?.rxPower.value} ${onu.optical?.rxPower.unit}`;
       case 2:
           return 'Sem Energia';
       default:
@@ -173,11 +172,11 @@ function getTitleStatus(){
   }
 }
 function getBairro(){
-  if(item.bairro){
-    return item.bairro;
+  if(onu.login.bairro){
+    return onu.login.bairro;
   }
-  if(item.cliente?.bairro){
-    return item.cliente.bairro;
+  if(onu.cliente?.bairro){
+    return onu.cliente.bairro;
   }
   return ''
 }
@@ -188,29 +187,29 @@ function openClose(){
 
   return (
     <DragArea ref={setNodeRef} style={style} isOpen={isOpen}>
-      <Connection onClick={() => getLoginId(item.id)}>
-        <Status status={item.onu_data?.status}/>
-        <SlotPon>Slot: {item.onu_data?.slot}</SlotPon>
-        <SlotPon>Pon: {item.onu_data?.pon}</SlotPon>
+      <Connection onClick={() => getLoginId(onu.login.id)}>
+        <Status status={onu.status}/>
+        <SlotPon>Slot: {onu.slot}</SlotPon>
+        <SlotPon>Pon: {onu.pon}</SlotPon>
       </Connection>
       
       <Data>
-        <Nome id={id} onClick={() => copy(id)}>{item.cliente ? item.cliente.razao : 'SEM REGISTRO'}</Nome>
+        <Nome id={id} onClick={() => copy(id)}>{onu.cliente ? onu.cliente.razao : 'SEM REGISTRO'}</Nome>
         
         <OpenBtn onClick={() => openClose()}><FontAwesomeIcon style={styleOpen} icon={faChevronCircleDown}/></OpenBtn>
-        <IgnoreBtn onClick={() => ignore(item)}><FontAwesomeIcon icon={faTimesCircle}/></IgnoreBtn>
+        <IgnoreBtn onClick={() => ignore(onu.login)}><FontAwesomeIcon icon={faTimesCircle}/></IgnoreBtn>
         <ConnInfo>
-          <Login status={item.onu_data?.status} id={`Longin${id}`} onClick={() => copy(`Longin${id}`)}>
-            {item.login ? item.login : 'sem login'}
+          <Login status={onu.status} id={`Longin${id}`} onClick={() => copy(`Longin${id}`)}>
+            {onu.login ? onu.login.login : 'sem login'}
           </Login>
           <Bairro id={`Bairro${id}`} onClick={() => copy(`Bairro${id}`)}>
             {getBairro()}
           </Bairro>
           <Fhtt id={`Fhtt${id}`} onClick={() => copy(`Fhtt${id}`)}>
-          {item.onu_data?.macAddress}
+          {onu.macAddress}
           </Fhtt>
-          <StatusIcon status={item.onu_data?.status}>
-           <FontAwesomeIcon icon={item.onu_data ? getState() : null} title={item.onu_data ? getTitleStatus(): null}/>
+          <StatusIcon status={onu.status}>
+           <FontAwesomeIcon icon={getState()} title={getTitleStatus()}/>
           </StatusIcon>
           
         </ConnInfo>
@@ -222,11 +221,11 @@ function openClose(){
       </DragHandle>
       
     <Details isOpen={isOpen}>
-    <FontAwesomeIcon icon={faEthernet}/>{item.mac? item.mac : ''}<br/>
-    <FontAwesomeIcon icon={faAudioDescription}/>{item.ip? item.ip : ''}<br/>
-    <FontAwesomeIcon icon={item.onu_data ? getState() : null}/>{item.onu_data ? getTitleStatus(): null}<br/>
-    <FontAwesomeIcon icon={faPlug}/>{`${item.onu_data?.optical ? item.onu_data.optical.voltage.value : ''} ${item.onu_data?.optical ? item.onu_data.optical.voltage.unit : ''}`}<br/>
-    <FontAwesomeIcon icon={faThermometerHalf}/>{`${item.onu_data?.optical ? item.onu_data?.optical.temperature.value : ''} ${item.onu_data?.optical ? item.onu_data.optical.temperature.unit : ''}`}<br/>
+    <FontAwesomeIcon icon={faEthernet}/>{onu.macAddress}<br/>
+    <FontAwesomeIcon icon={faAudioDescription}/>{onu.login.ip? onu.login.ip : ''}<br/>
+    <FontAwesomeIcon icon={getState()}/>{getTitleStatus()}<br/>
+    <FontAwesomeIcon icon={faPlug}/>{`${onu.optical ? onu.optical.voltage.value : ''} ${onu.optical ? onu.optical.voltage.unit : ''}`}<br/>
+    <FontAwesomeIcon icon={faThermometerHalf}/>{`${onu.optical ? onu.optical.temperature.value : ''} ${onu.optical ? onu.optical.temperature.unit : ''}`}<br/>
     </Details>
     </DragArea>
   );

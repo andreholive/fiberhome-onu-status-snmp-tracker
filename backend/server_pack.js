@@ -46,7 +46,7 @@ async function getLogin(mac) {
     return await axios.post(url, body, getHeader());
 }
 
-async function clienteFibra(mac) {
+async function getClienteFibra(mac) {
         
     const url = config.ixc_api+"/webservice/v1/radpop_radio_cliente_fibra";
         const body =
@@ -59,41 +59,48 @@ async function clienteFibra(mac) {
             sortname: 'mac',
             sortorder: 'desc'
             };
-    return await axios.post(url, body, getHeader());
+    const req = await axios.post(url, body, getHeader());
+    return req.data.registros[0];
 }
 
-async function updateClienteFibra(fibra, caixa, porta) {
-    const body = fibra.data.registros[0]; 
-    const url = `${config.ixc_api}/webservice/v1/radpop_radio_cliente_fibra/${body.id}`;
+async function updatePortaClienteFibra(mac, porta) {
+    const cliente_fibra = await getClienteFibra(mac);
+    const url = `${config.ixc_api}/webservice/v1/radpop_radio_cliente_fibra/${cliente_fibra.id}`;
     const header = {headers:{'Content-Type': 'application/json',
     Authorization: 'Basic ' + new Buffer.from(token).toString('base64'),
     }}
-    body.id_caixa_ftth = caixa;
-    body.porta_ftth = porta;
-    return await axios.put(url, body, header);
+    cliente_fibra.porta_ftth = porta;
+    const req = await axios.put(url, cliente_fibra, header);
+    if(req.data.type == 'success'){
+        return true;
+    }
+    return false;
 }
 
-async function updateLogin(data) {
-    const login = await getLogin(data.login.onu_mac);
-    const fibra = await clienteFibra(data.login.onu_mac);
-    const url = `${config.ixc_api}/webservice/v1/radusuarios/${data.login.id}`;
-    const body = login.data.registros[0];
+async function updatePortaLogin(login){
+    const url = `${config.ixc_api}/webservice/v1/radusuarios/${login.id}`;
     const header = {headers:{'Content-Type': 'application/json',
     Authorization: 'Basic ' + new Buffer.from(token).toString('base64'),
-    }}   
-    body.id_caixa_ftth = data.login.id_caixa_ftth;
-    body.ftth_porta = data.login.ftth_porta;
-    const update = await updateClienteFibra(fibra, body.id_caixa_ftth, body.ftth_porta);
-    console.log(update.data)
-    if(update.data.cliente_coord == 'success'){
-        const updateLogin = await axios.put(url, body, header);
-        if(updateLogin.data.type == 'success'){
+    }}
+    const update= await axios.put(url, login, header);
+    if(update.data.type == 'success'){
+        return true;
+    }
+    return false;
+}
+
+
+async function updatePorta(login){
+    const update = await updatePortaClienteFibra(login.onu_mac, login.ftth_porta);
+    if(update){
+        const update_login = await updatePortaLogin(login);
+        if(update_login){
+            console.log('Login '+login.login+' Atualizado');
             return true;
         }
         return false;
     }
     return false;
-    
 }
 
 async function getClient(id) {
@@ -218,24 +225,25 @@ async function busca_caixa(desc, olts) {
         };
     const caixa = await axios.post(url, body, getHeader());
     if(caixa.data.total == 1){
-        const logins = await getLoginsByCTO(caixa.data.registros[0].id);
-        await execute(logins.data.registros);
-        if(logins.data.registros){
-            for(var i = 0; i < logins.data.registros.length; i++){
-                const onu = findOnuinOltsbyMac(olts, logins.data.registros[i].onu_mac)
-                if(onu){
-                    const status = await onu.checkOnuStatus();
-                    onu.setStatus(status);
-                    if(status == 1){
-                        await onu.getOpticalPower();
-                    }
-                    logins.data.registros[i].onu_data = onu;
+        let logins = await getLoginsByCTO(caixa.data.registros[0].id);
+        let onus = [];
+        logins = logins.data.registros;
+        if(logins){
+           const exec = async i =>{
+                if(logins && i < logins.length){
+                    const onu = findOnuinOltsbyMac(olts, logins[i].onu_mac);
+                    await onu.updateStatus();
+                    await onu.updateLogin();
+                    await onu.updateCliente();
+                    onus.push(onu);
+                    await exec(i+1);
                 }
             }
-            return {caixa: caixa.data.registros[0], logins: logins.data.registros}
+            await exec(0);
+            return {caixa: caixa.data.registros[0], onus}
         }
         else{
-            return {caixa: caixa.data.registros[0], logins: null}
+            return {caixa: caixa.data.registros[0], onus: null}
         }
         
     }
@@ -247,7 +255,7 @@ module.exports = {
     getLogin,
     getClient,
     busca_caixa,
-    updateLogin,
+    updatePorta,
     busca_cliente
     
 }

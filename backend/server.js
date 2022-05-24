@@ -2,7 +2,7 @@ const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
 const snmp = require('./server_pack');
-const {OLTs} = require('./data_teste');
+const {OLTs} = require('./data');
 const Olt = require('./Olt');
 const User = require('./User');
 
@@ -10,8 +10,8 @@ const User = require('./User');
 const Queue = require("promise-queue");
 Queue.configure(require('vow').Promise);
 
-let olts = {};
-let users = {};
+var olts = {};
+var users = {};
 
 
 
@@ -24,6 +24,9 @@ const sockets = socketio(server, {
     }
   });
 
+
+/* INICIO DO SISTEMA */
+
 sockets.on('connection', (socket) => {
     var num = Object.keys(users).length;
     users[num] = new User({olts, socket});
@@ -34,10 +37,19 @@ sockets.on('connection', (socket) => {
         const res = await snmp.busca_cliente(data);
         socket.emit('cliente', res);
     });
-    socket.on('updateLogin', async (data) => {
-        const resp = await snmp.updateLogin(data);
-        socket.emit('updateLogin', resp.data);
+
+    socket.on('findOnu', async (data) => {
+        const onu = await olts[data.id_transmissor].findOnuByMac(data.onu_mac);
+        const onuData = await onu.getOnuData();
+        socket.emit('login', onuData);
     });
+
+    socket.on('updatePorta', async (data) => {
+        const resp = await snmp.updatePorta(data);
+        //socket.emit('updatePorta', resp.data);
+        console.log(resp)
+    });
+
     socket.on('disconnect', () => {
         users[num].stopScan()
         delete users[num];
@@ -46,12 +58,13 @@ sockets.on('connection', (socket) => {
 
 server.listen(3001, async () => {  
     console.log(`Iniciando Servidor...`);
-
+    // PRIMEIRA VERIFICAÇÃO DAS OLTS
     for(const olt of OLTs){
         if(olt.ativo == 1)
         {
             const obj = new Olt(olt);
-            olts[obj.id] = obj;
+            console.log(obj.options.idIxc)
+            olts[obj.options.idIxc] = obj;
             obj.checkOnus();
         }
         

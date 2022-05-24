@@ -64,16 +64,6 @@ useEffect(async () => {
     });
 },[]);
 
-function searchConnectionsCaixa(data)
-  {
-    let inList = Object.values(conns_caixa).findIndex((con, index) => {
-      if(con.id == data.id){
-        return con.id == data.id;
-      } 
-    });
-    return inList;
-  }
-
   function busca_cto(val){
     clearInterval(search);
     setBusca(val);
@@ -93,31 +83,30 @@ function searchConnectionsCaixa(data)
       setSearching(false);
       setCaixaData(data);
       setPosition({lat: parseFloat(caixa.latitude), lng: parseFloat(caixa.longitude)})
-      if(data.logins)
+      if(data.onus)
       {
-        const logins = data.logins;
-        console.log(logins)
-        setMarks(logins);
-        for(const login of logins)
+        const onus = data.onus;
+        for(const onu of onus)
         {
-          conns_caixa.push(login);
+          conns_caixa.push(onu);
+          //setMarks
         }
         function findLoginByPort(porta){
           var login = null;
-          Object.values(logins).map(log => {
-            if(log.ftth_porta == porta)
-            login = log;
+          Object.values(onus).map(onu => {
+            if(onu.login.ftth_porta == porta)
+            login = onu;
           })
           return login;
         }
         for(var i = 1; i<=portas; i++){
           var login = findLoginByPort(i)
-          setCaixa((caixa) => [...caixa, {login: login, ftth_porta: i}]);
+          setCaixa((caixa) => [...caixa, {onu: login, ftth_porta: i}]);
         }
       }
       else{
         for(var i = 1; i<=portas; i++){
-          setCaixa((caixa) => [...caixa, {login: null, ftth_porta: i}]);
+          setCaixa((caixa) => [...caixa, {onu: null, ftth_porta: i}]);
         }
       }
     }
@@ -139,7 +128,7 @@ function searchConnectionsCaixa(data)
     <Portas>
     {searching ? <ShimmerSectionHeader center /> : ''}
       {caixa.map(porta => (
-          <PortaDrop id={porta.ftth_porta} item={porta.login} key={porta.ftth_porta}/>
+          <PortaDrop id={porta.ftth_porta} onu={porta.onu} key={porta.ftth_porta}/>
         ))}
     </Portas>      
     </Caixa>

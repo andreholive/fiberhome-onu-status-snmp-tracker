@@ -3,7 +3,8 @@ import {DndContext} from '@dnd-kit/core';
 import styled from 'styled-components';
 import socketIOClient from 'socket.io-client';
 import LoginDrag from './LoginDrag';
-import Clientes from './Clientes'
+import Clientes from './Clientes';
+import ClientesData from './ClientesData'
 import Map from './Map';
 import Header from './components/Header';
 import Caixa from './Caixa'
@@ -88,6 +89,8 @@ function App() {
   const [openMenu, setOpenMenu] = useState(false);
   const [menuContent, setMenuContent] = useState(0);
   const firstRenderRef = useRef(true);
+  const [scanNumber, setScanNumber] = useState(0);
+  const [login, setLogin] = useState(false);
   
 
   function removeFronConnections(data){
@@ -112,11 +115,11 @@ function App() {
     setClientes([...clients]);
   }
 
-  function searchConnections(data)
+  function searchConnections(onu)
   {
     let inList = Object.values(conns).findIndex((con, index) => {
-      if(con.id == data.id){
-        return con.id == data.id;
+      if(con.onuIndex == onu.onuIndex){
+        return con.onuIndex == onu.onuIndex;
       } 
     });
     return inList;
@@ -125,19 +128,19 @@ function App() {
   
 
   
-  function inserConnection(data){
-    console.log(conns)
-    const index = searchConnections(data);
+  function inserConnection(onu){
+    console.log(onu)
+    const index = searchConnections(onu);
     if(index != -1)
     {
-      conns[index].onu_data.status = data.onu_data.status;
-      conns[index].onu_data.optical = data.onu_data.optical;
-      conns[index].ip = data.ip;
-      conns[index].mac = data.mac;
+      conns[index].status = onu.status;
+      conns[index].optical = onu.optical;
+      conns[index].login.ip = onu.login.ip;
+      conns[index].macAddress = onu.macAddress;
       setConnections([...conns]);
     }
     if(index === -1){
-      conns.push(data);
+      conns.push(onu);
       setConnections([...conns]);
     }
   }
@@ -151,11 +154,16 @@ function App() {
       inserConnection(data);
     });
 
+    socket.on('scan', data => {
+      setScanNumber(data)
+    });
+
     socket.on('cliente', data => {
       openCaixa(2);
       insertCLient(data);
       console.log(data)
     });
+
 
   }
 
@@ -173,13 +181,14 @@ function App() {
     if(val != ''){
     clearInterval(searchCliente);
     searchCliente = setTimeout(async() =>{
+          setClientes([]);
           socket.emit('cliente', val);
     }, 1000);
     }
     
   }
 
-  function handleDragEnd(event) {
+  function handleDragEnd2(event) {
     console.log(event.active)
     let arr = [...caixa];
     if(event.over){
@@ -190,22 +199,23 @@ function App() {
       if(over.id === 'trash'){
         arr[active.id -1].login = null;
         setCaixa(arr);
-        active.data.current.login.ftth_porta = '';
-        active.data.current.login.id_caixa_ftth = '';
-        socket.emit('updateLogin', {login: active.data.current.login, porta: over.id});
+        active.data.current.onu.login.ftth_porta = '';
+        active.data.current.onu.login.id_caixa_ftth = '';
+        socket.emit('updateLogin', {login: active.data.current.onu.login, porta: over.id});
         return;
       }
-    if(!arr[over.id - 1].login){ //verifica slot vazio
-      arr[over.id - 1].login = active.data.current.login; //coloca o login no slot
+      console.log(arr[over.id - 1])
+    if(!arr[over.id - 1].onu){ //verifica slot vazio
+      arr[over.id - 1].onu = active.onu; //coloca o login no slot
       if(arr[active.id -1]){
-        arr[active.id -1].login = null; //limpa login do slot anterior
+        arr[active.id -1].onu = null; //limpa login do slot anterior
       }
       active.id = over.id;
-      active.data.current.login.ftth_porta = over.id;
-      active.data.current.login.id_caixa_ftth = caixaData.caixa.id;
-      socket.emit('updateLogin', {login: active.data.current.login, porta: over.id});
+      active.data.current.onu.login.ftth_porta = over.id;
+      active.data.current.onu.login.id_caixa_ftth = caixaData.caixa.id;
+      socket.emit('updateLogin', {login: active.data.current.onu.login, porta: over.id});
       if(active.data.current.isConn){
-        removeFronConnections(active.data.current.login) //retira da conexoes
+        removeFronConnections(active.onu) //retira da conexoes
       }
       
     }
@@ -213,19 +223,40 @@ function App() {
     }
   }
 
-  function scan(value){
-    socket.emit('startScan', value);
+  function handleDragEnd(event) {
+    let arr = [...caixa];
+    if(event.over){
+      const {over, active} = event;
+      if(over.id === active.id){
+        return;
+      }
+      if(over.id === 'trash'){
+        arr[active.id -1].login = null;
+        setCaixa(arr);
+        active.data.current.onu.login.ftth_porta = '';
+        active.data.current.onu.login.id_caixa_ftth = '';
+        socket.emit('updateporta', {login: active.data.current.onu.login, porta: over.id});
+        return;
+      }
+      if(!arr[over.id - 1].onu){
+          arr[over.id - 1].onu = active.data.current.onu;
+          arr[active.id -1].onu = null;
+          active.id = over.id;
+          active.data.current.onu.login.ftth_porta = over.id;
+          active.data.current.onu.login.id_caixa_ftth = caixaData.caixa.id;
+          console.log(active, over)
+          socket.emit('updatePorta', active.data.current.onu.login);
+          if(active.data.current.isConn){
+            removeFronConnections(active.onu);
+          }
+      }
+      setCaixa(arr);
+    }
+    
   }
 
-  const style = {
-    width: '145px',
-    height: '30px',
-    fontSize: '15px',
-    fontWeight: '500',
-    color: '#CCC',
-    margin: '6px',
-    border: '1px solid #CCC',
-    borderRadius: '5px'
+  function scan(value){
+    socket.emit('startScan', value);
   }
 
   function openCaixa(content){
@@ -266,19 +297,26 @@ function App() {
     buscaCliente={buscaCliente}
     setPosition={setPosition}
     setMarks={setMarks}
+    setLogin={setLogin}
+    showDetail={openCaixa}
+    /> : ''}
+    {menuContent == 3 ? <ClientesData
+    login={login}
+    socket={socket} 
     /> : ''}
     </Menu>
-  <Conections>
-      <select onChange={e => {scan(e.target.value)}} style={style}>
-          <option key={-1} value={-1}>Parar</option>
-        {olts.map((olt, index) => (
-          <option key={index} value={index}>{olt.cidade}</option>
-        ))}
-      </select>
+    <Conections>
+    <select onChange={e => {scan(e.target.value)}} className='select-cidade'>
+        <option key={-1} value={-1}>Parar</option>
+      {olts.map((olt, index) => (
+        <option key={index} value={olt.options.idIxc}>{olt.cidade}</option>
+      ))}
+    </select>
+    <div className='scans'>{scanNumber}</div>
       
     <Clients>
-    {connections.map(connection => (
-        <LoginDrag id={connection.id} item={connection} key={connection.id} conn={true} ignore={removeFronConnections}/>
+    {connections.map(onu => (
+        <LoginDrag id={onu.login.id} onu={onu} key={onu.login.id} conn={true} ignore={removeFronConnections}/>
       ))}
     </Clients>
     </Conections>

@@ -9,16 +9,16 @@ module.exports = class Olt{
         this.onus = []
     }
 
-    async checkOnus() //primeira interação ao iniciar o servidor
+
+    /* checkOnus() atualiza todas as ONUs que estão autorizadas na OLT */
+
+    async checkOnus()
     { 
-        console.log('teste')
         try {
-            console.log('teste2', this.options)
             const authOnus = await fh.getAuthorizedOnus(this.options);
             var i = 0;
-            console.log('teste3')
             for(const onu of authOnus){
-                this.onus[i] = new Onu({...onu, options: this.options});
+                this.onus[i] = new Onu({...onu, options: this.options, index: i});
                 i++;
             }
             console.log(`ONUs de ${this.cidade} Atualizadas!`);
@@ -28,16 +28,18 @@ module.exports = class Olt{
         
     }
 
-    // fim da primeira interação
+    /* getOnus() retorna as ONUs desta OLT */
 
     getOnus(){
         return this.onus;
     }
+
+    onu = (index) => this.onus[index];
     
 
     findOnuByMac(mac){
         const index = this.onus.findIndex((onu, index) => {
-            if(onu.macAddress == mac){
+            if(onu.macAddress === mac){
                 return index;
             }
         });
@@ -55,35 +57,35 @@ module.exports = class Olt{
         await exec(0);
         console.log(`Status das ONUs de ${this.cidade} Atualizados!`);
     }
-
     
-//FUNCÃO QUE O USUÁRIO CHAMA PARA VERIFICAR SE UMA ONU ESTÁ ONLINE OU OFFLINE
+    //FUNCÃO QUE O USUÁRIO CHAMA PARA VERIFICAR SE UMA ONU ESTÁ ONLINE OU OFFLINE
     async checkOnuStatus(onu, next, scan, envia)
     {
         const status = await onu.checkOnuStatus();
-        if(onu.getStatus() != status){ // verifica se o status mudou
-            onu.setStatus(status);//grava o novo status
-            if(status == 1){ //verifica se o status é ONLINE para...
-                await onu.getOpticalPower(); //verificar a potencia do sinal
+        if(onu.getStatus() != status){
+            onu.setStatus(status);
+            if(status == 1){
+                await onu.updateOpticalPower(); 
             }
-            if(!onu.login){ //verifica se a onu possui um login vinculado
-                await onu.getLogin(); //busca o login e vincula a ONU
+            if(!onu.getLogin()){ 
+                await onu.updateCliente(); 
             }
-            if(onu.login){
-                onu.login.onu_data = {index: onu.onuIndex, macAddress: onu.macAddress, status: status, slot: onu.slot, pon: onu.pon, optical: onu.optical }
-                console.log(onu.login.cliente.razao, onu.getStatus(), onu.login.bairro, onu.macAddress)
-                await envia({type: 'connection', data: onu.login});  
-            }
-            else{
-                onu.login = {id: onu.macAddress};
-                onu.login.onu_data = {index: onu.onuIndex, macAddress: onu.macAddress, status: status, slot: onu.slot, pon: onu.pon, optical: onu.optical };
-                await envia({type: 'connection', data: onu.login});  
-                onu.login = null;
-                console.log("SEM LOGIN", onu.macAddress);
-            }
+            console.log(onu.optical);
+            await envia({type: 'connection', data: onu});
             
         }
         this.onus.indexOf(onu) == (this.onus.length-1) ? scan() : await next();
+    }
+
+    async updateOnus(onuList){
+        const exec = async i =>{
+            if(onuList && i < onuList.length){
+                const onu = this.findOnuByMac(onuList[i].macAddress);
+                await onu.updateStatus();
+                await exec(i+1)
+            }
+        }
+        await exec(0);
     }
     
 }

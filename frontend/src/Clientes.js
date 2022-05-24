@@ -16,7 +16,7 @@ const Input = styled.input`
     z-index: 50;
 `;
 
-function Clientes({results, buscaCliente, buscaClientes, setMarks, setPosition}) {
+function Clientes({results, buscaCliente, buscaClientes, setMarks, setPosition, showDetail, setLogin}) {
 
 function goto(login){
     setPosition({lat: parseFloat(login.latitude), lng: parseFloat(login.longitude)});
@@ -30,7 +30,7 @@ function goto(login){
     <div>
         {results.map(result => (
             result.logins ?
-            <ResultCliente cliente={result} key={result.id} goto={(login)=>{goto(login)}}/>
+            <ResultCliente cliente={result} key={result.id} goto={(login)=>{goto(login)}} showDetail={showDetail} setLogin={setLogin}/>
             : ''
         ))}
     </div>

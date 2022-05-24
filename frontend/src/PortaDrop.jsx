@@ -33,15 +33,17 @@ const Number = styled.div`
     text-align: center;
 `;
 
-export function Droppable({id, item}) {
+export function Droppable({id, onu}) {
   const {isOver, setNodeRef} = useDroppable({
     id: id,
+    onu: onu,
+    
   });
   return (
     <Porta>
     <Number>{id}</Number>
     <DropArea ref={setNodeRef}>
-      {item ? <LoginDrag id={item.ftth_porta} item={item} key={item.id} conn={false}/> : null}
+      {onu ? <LoginDrag id={id} onu={onu} key={onu.login.id} conn={false}/> : null}
     </DropArea>
     </Porta>
     
