@@ -93,13 +93,13 @@ function App() {
   const [login, setLogin] = useState(false);
   
 
-  function removeFronConnections(data){
-    console.log(data)
+  function removeFronConnections(onu){
+    console.log(onu)
     let arr = [...connections]
     let inList = Object.values(arr).findIndex((con, index) => {
       console.log(con)
-      if(con.id == data.id){
-        return con.id == data.id;
+      if(con.id == onu.id){
+        return con.id == onu.id;
       } 
     });
     if(inList != -1){
@@ -251,7 +251,7 @@ function App() {
     <>
     <Main>
     <button onClick={() => { openCaixa(1)}}>CAIXA</button>
-    <DndContext onDragEnd={handleDragEnd}>
+    <DndContext onDragEnd={handleDragEnd} >
     <Menu open={openMenu}>
     {menuContent == 1 ? (<Caixa 
         socket={socket} 

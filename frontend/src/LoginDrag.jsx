@@ -198,7 +198,7 @@ function openClose(){
         <Nome id={id} onClick={() => copy(id)}>{onu.cliente ? onu.cliente.razao : 'SEM REGISTRO'}</Nome>
         
         <OpenBtn onClick={() => openClose()}><FontAwesomeIcon style={styleOpen} icon={faChevronCircleDown}/></OpenBtn>
-        <IgnoreBtn onClick={() => ignore(onu.login)}><FontAwesomeIcon icon={faTimesCircle}/></IgnoreBtn>
+        <IgnoreBtn onClick={() => ignore(onu)}><FontAwesomeIcon icon={faTimesCircle}/></IgnoreBtn>
         <ConnInfo>
           <Login status={onu.status} id={`Longin${id}`} onClick={() => copy(`Longin${id}`)}>
             {onu.login ? onu.login.login : 'sem login'}

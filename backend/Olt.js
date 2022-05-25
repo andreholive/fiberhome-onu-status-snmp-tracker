@@ -6,13 +6,22 @@ module.exports = class Olt{
         this.id = data.id,
         this.cidade = data.cidade,
         this.options = data.options,
-        this.onus = []
+        this.onus = [];
+        this.users = [];
+        this.scanNum = 1;
+        this.scanning = false;
     }
 
 
-    /* checkOnus() atualiza todas as ONUs que estão autorizadas na OLT */
+   isScanning = () => this.scanning;
 
-    async checkOnus()
+   send = async (obj) => {
+    Object.values(this.users).map(async (user) => {
+        await user.socket.emit(obj.type, obj.data)
+    });
+   }
+
+    async getAuthorizedOnus()
     { 
         try {
             const authOnus = await fh.getAuthorizedOnus(this.options);
@@ -27,15 +36,11 @@ module.exports = class Olt{
         }
         
     }
-    /* getOnus() retorna as ONUs desta OLT */
 
     getOnus(){
         return this.onus;
     }
-
-    onu = (index) => this.onus[index];
     
-
     findOnuByMac(mac){
         const index = this.onus.findIndex((onu, index) => {
             if(onu.macAddress === mac){
@@ -45,43 +50,60 @@ module.exports = class Olt{
         return this.onus[index];
     }
 
-    async updateOnuStatus(){
-        const exec = async i =>{
-            if(this.onus && i < Object.keys(this.onus).length){
-                const status = await this.onus[i].checkOnuStatus();
-                this.onus[i].setStatus(status);
-                await exec(i+1)
-            }
+    updateOnuStatus = async i =>{
+        if(this.onus && i < Object.keys(this.onus).length){
+            const status = await this.onus[i].checkOnuStatus();
+            this.onus[i].setStatus(status);
+            await this.updateOnuStatus(i+1);
+            return;
         }
-        await exec(0);
         console.log(`Status das ONUs de ${this.cidade} Atualizados!`);
     }
-    
-    //FUNCÃO QUE O USUÁRIO CHAMA PARA VERIFICAR SE UMA ONU ESTÁ ONLINE OU OFFLINE
-    async checkOnuStatus(onu, next, scan, envia)
-    {
-        const status = await onu.checkOnuStatus();
-        if(onu.getStatus() != status){
-            onu.setStatus(status);
-            if(status == 1){
-                await onu.updateOpticalPower(); 
-            }
-            await onu.updateCliente(); 
-            await envia({type: 'connection', data: onu});
-            
+
+    async startScan(user){
+        this.users.push(user);
+        if(!this.isScanning())
+        {
+            await this.updateOnuStatus(0);
+            this.scanning = true;
+            this.scan(0);
         }
-        this.onus.indexOf(onu) == (this.onus.length-1) ? scan() : await next();
     }
 
-    async updateOnus(onuList){
-        const exec = async i =>{
-            if(onuList && i < onuList.length){
-                const onu = this.findOnuByMac(onuList[i].macAddress);
-                await onu.updateStatus();
-                await exec(i+1)
-            }
+    stopScan(user){
+        
+        const index = this.users.indexOf(user);
+        this.users.splice(index, 1);
+        if(Object.values(this.users).length == 0){
+            this.scanning = false;
+            this.scanNum = 1;
         }
-        await exec(0);
     }
+    
+    scan = async i =>{
+        if(i == 0){
+            console.log('SCANNING', this.scanNum);
+            this.send({type: 'scan', data: this.scanNum});
+            this.scanNum++;
+        }
+        if(this.isScanning() && this.onus && i < Object.keys(this.onus).length){
+            const onu = this.onus[i];
+            const status = await onu.checkOnuStatus();
+            if(onu.getStatus() != status){
+                onu.setStatus(status);
+                if(status == 1){
+                    await onu.updateOpticalPower(); 
+                }
+                await onu.updateCliente(); 
+                await this.send({type: 'connection', data: onu});
+            }
+            if(i == (this.onus.length-1)){
+                this.scan(0);
+                return; 
+            }
+            await this.scan(i+1);
+        }   
+    }
+        
     
 }

@@ -33,7 +33,7 @@ const Number = styled.div`
     text-align: center;
 `;
 
-export function Droppable({id, onu}) {
+export function PortaDrop({id, onu}) {
   const {isOver, setNodeRef} = useDroppable({
     id: id,
     onu: onu,
@@ -50,4 +50,4 @@ export function Droppable({id, onu}) {
   );
 }
 
-export default Droppable;
+export default PortaDrop;

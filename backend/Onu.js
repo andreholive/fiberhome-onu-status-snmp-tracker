@@ -163,5 +163,18 @@ module.exports = class Onu{
             return false;
         }
     }
+
+    async updatePorta(login){
+        const update = await this.updatePortaClienteFibra(login.onu_mac, login.ftth_porta);
+        if(update){
+            const update_login = await this.updateLogin(login);
+            if(update_login){
+                console.log('Login '+login.login+' Atualizado');
+                return true;
+            }
+            return false;
+        }
+        return false;
+    }
     
 }
