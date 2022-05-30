@@ -39,6 +39,7 @@ module.exports = class Lobby{
 
     startSocket = () => {
         this.sockets.on('connection', (socket) => { 
+            console.log('User '+socket.conn.id+' connected')
             const user = this.insertUser(socket);
             socket.on('startScan', async (num) => { 
                 num != -1 ? user.startScan(num) : user.stopScan();
@@ -54,6 +55,13 @@ module.exports = class Lobby{
                 const resp = await onu.updatePorta(login);
                 console.log(resp)
             });
+
+            socket.on('cliente', async (data) => {
+                console.log(data)
+                const res = await snmp.busca_cliente(data);
+                socket.emit('cliente', res);
+            });
+
             socket.on('disconnect', () => this.removeUser(socket));
         }
         

@@ -34,28 +34,21 @@ margin: 4px;
 display: ${props => props.isOpen ? 'block' : 'none'};
 `;
 
-function ResultCliente({cliente, goto, showDetail, setLogin}) {
+function ResultCliente({cliente}) {
+
 const logins = cliente.logins;
 const [isOpen, setIsOpen] = useState(false);
  
-  function openClose(){
-    setIsOpen(!isOpen);
-  }
 
-  function select(){
-    setLogin(logins[0]);
-    showDetail(3);
-  }
-
-  const styleOpen = isOpen ? {
+const styleOpen = isOpen ? {
     transform: 'rotate(180deg)' } : undefined;
 
  return (
       <Cliente key={cliente.id} isOpen={isOpen}>
-      {logins?.length > 1 ? <OpenBtn onClick={() => openClose()}><FontAwesomeIcon style={styleOpen} icon={faChevronCircleDown}/></OpenBtn> : ''}
-      <div onClick={select}>{cliente.razao}</div>
+      {logins?.length > 1 ? <OpenBtn><FontAwesomeIcon style={styleOpen} icon={faChevronCircleDown}/></OpenBtn> : ''}
+      <div>{cliente.razao}</div>
       {logins?.length > 1 ? <Details isOpen={isOpen} /> : ''}
-      {logins?.length == 1 ? <FontAwesomeIcon onClick={() => goto(logins[0])} style={styleOpen} icon={faArrowAltCircleRight}/> : ''}
+      {logins?.length == 1 ? <FontAwesomeIcon style={styleOpen} icon={faArrowAltCircleRight}/> : ''}
       
       </Cliente>
         

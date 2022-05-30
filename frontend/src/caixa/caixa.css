@@ -1,0 +1,84 @@
+.portas {
+    display: flex;
+    flex-direction: column;
+    width: 430px;
+    height: auto;
+}
+
+.trash {
+	background: #ff0011;
+    width: 25px;
+    height: 32px;
+    display: inline-block;
+    margin: 14px 5px;
+    position: relative;
+    -webkit-border-bottom-right-radius: 6px;
+    -webkit-border-bottom-left-radius: 6px;
+    -moz-border-radius-bottomright: 6px;
+    -moz-border-radius-bottomleft: 6px;
+    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.trash span {
+	position: absolute;
+    height: 7px;
+    background: #ff0011;
+    top: -9px;
+    left: -3px;
+    right: -10px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    transform: rotate(
+0deg
+);
+    transition: transform 250ms;
+    transform-origin: 19% 100%;
+    width: 30px;
+}
+.trash span:after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 4px;
+  background: #ff0011;
+  top: -5px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  transform: rotate( 
+0deg
+);
+  transition: transform 250ms;
+  transform-origin: 19% 100%;
+  left: -5;
+  left: 11px;
+}
+
+
+.trash i {
+	position: relative;
+  width: 2px;
+  height: 20px;
+  background: #fff;
+  display: block;
+  margin: 4px auto;
+  border-radius: 5px;
+}
+.trash i:after {
+	content: '';
+	width: 2px;
+	height: 20px;
+	background: #fff;
+	position: absolute;
+	left: -8px;
+	border-radius: 5px;
+}
+.trash i:before {
+	content: '';
+	width: 2px;
+	height: 20px;
+	background: #fff;
+	position: absolute;
+	right: -8px;
+	border-radius: 5px;
+}

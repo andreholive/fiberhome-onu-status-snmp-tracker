@@ -10,7 +10,6 @@ const DragArea = styled.div`
     width: 390px;
     height: ${props => props.isOpen ? '200px' : '40px'};
     border: 1px solid #000;
-    margin: 5px;
     background-color: #FFF;
     z-index: 200;
     border-radius: 4px;

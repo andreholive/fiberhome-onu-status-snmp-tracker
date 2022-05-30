@@ -1,0 +1,40 @@
+#toggle2:checked~.menu_monitor_content {
+    right: 0;
+}
+
+#toggle2:checked~.wrapper_button2{
+    right: 580px;
+}
+
+.menu_monitor {
+    position: absolute;
+    height: 100vh;
+    width: auto;
+    right: 0;
+}
+
+.menu_monitor_content {
+    width: 560px;
+    height: 100vh;
+    position: absolute;
+    right: -580px;
+    padding: 0 10px;
+    background-color: brown;
+    display: flex;
+    flex-direction: column;
+    transition: .5s cubic-bezier(0.55, 0.025, 0.675, 0.97);
+    align-items: center;
+}
+
+.select-olt{
+    width: 250px;
+    height: 50px;
+
+}
+
+.connections{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+}

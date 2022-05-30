@@ -1,5 +1,3 @@
-const snmp = require('./server_pack');
-
 module.exports = class User{
     constructor(data){
         this.id = data.socket.conn.id;

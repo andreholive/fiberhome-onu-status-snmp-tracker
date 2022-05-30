@@ -1,7 +1,5 @@
 const snmp = require('net-snmp');
 const axios = require('axios');
-const Queue = require("promise-queue");
-Queue.configure(require('vow').Promise);
 const config = require('./config.json');
 
 const token = config.token;
@@ -134,7 +132,7 @@ async function busca_caixa(desc, olts) {
     const body =
         { 
         qtype: 'descricao',
-        query: desc, //pesquisa do tecnico
+        query: desc,
         oper: 'L',
         page: '1',
         rp: '20',
@@ -154,7 +152,6 @@ async function busca_caixa(desc, olts) {
                     await onu.getLogin();
                     await onu.updateCliente();
                     onus.push(onu);
-                    console.log(onu.login.ftth_porta)
                     await exec(i+1);
                 }
             }
