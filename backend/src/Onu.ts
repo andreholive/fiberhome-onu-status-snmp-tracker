@@ -1,19 +1,33 @@
 const fh = require('snmp-fiberhome');
-const snmp = require('./server_pack');
-const {OIDs} = require('./oid-fh');
-const config = require('./config.json');
-const token = config.token;
+import { IxcApi } from "./ixcApi";
+import {Snmp} from './snmp'
+const api = new IxcApi();
+const snmp = new Snmp();
+import {OIDs} from './oid-fh';
+require('dotenv/config');
 const axios = require('axios');
 
-module.exports = class Onu{
-    constructor(data){
+export class Onu{
+    index: number;
+    onuIndex: number;
+    status: number;
+    macAddress: any;
+    slot: number;
+    pon: number;
+    onuId: number;
+    login: any;
+    options: any;
+    optical: any;
+    cliente: any;
+    fibra: any;
+    constructor(data:any){
         this.index = data.index;
         this.onuIndex = data._onuIndex,
         this.macAddress = data.macAddress,
         this.slot = data.slot,
         this.pon = data.pon,
         this.onuId = data.onuId,
-        this.status = null,
+        this.status = 0,
         this.options = data.options,
         this.login = null;
         this.optical = null;
@@ -23,7 +37,7 @@ module.exports = class Onu{
 
 
     
-    setStatus(status){
+    setStatus(status:number){
         this.status = status;
     }
 
@@ -31,7 +45,7 @@ module.exports = class Onu{
         return this.status;
     }
 
-    setLogin(login){
+    setLogin(login:any){
         this.login = login;
     }
 
@@ -56,55 +70,30 @@ module.exports = class Onu{
     }
 
     async getLogin(){
-        var login = await snmp.getLogin(this.macAddress);
-        if(login.data.registros)
-        {
-            this.login = login.data.registros[0];
-            return this.login;
+        try{
+            this.login = await api.getLogin(this.macAddress);
         }
-        return false;
+        catch(error){
+            console.log(error)
+        }
     }
 
-    async getClienteFibra(mac) {
-        
-        const url = config.ixc_api+"/webservice/v1/radpop_radio_cliente_fibra";
-            const body =
-                { 
-                qtype: 'mac',
-                query: mac,
-                oper: '=',
-                page: '1',
-                rp: '1',
-                sortname: 'mac',
-                sortorder: 'desc'
-                };
-        const req = await axios.post(url, body, snmp.getHeader());
-        if(req.data.registros)
-        {
-            this.fibra = req.data.registros[0];
-            return this.fibra;
+    async updateLogin(login:any){
+        try{
+            if(await api.updateLogin(login)){
+                await this.getLogin();
+                return true;
+            }
+        }catch(error){
+            throw new Error('UPDATE LOGIN ERROR');
         }
-        return false;
     }
 
-    async updateLogin(login){
-        const url = `${config.ixc_api}/webservice/v1/radusuarios/${login.id}`;
+    async updatePortaClienteFibra(mac:any, porta:any) {
+        const cliente_fibra = await api.getClienteFibra(mac);
+        const url = `${process.env.IXC_API}/webservice/v1/radpop_radio_cliente_fibra/${cliente_fibra.id}`;
         const header = {headers:{'Content-Type': 'application/json',
-        Authorization: 'Basic ' + new Buffer.from(token).toString('base64'),
-        }}
-        const update= await axios.put(url, login, header);
-        if(update.data.type == 'success'){
-            await this.getLogin();
-            return true;
-        }
-        return false;
-    }
-
-    async updatePortaClienteFibra(mac, porta) {
-        const cliente_fibra = await this.getClienteFibra(mac);
-        const url = `${config.ixc_api}/webservice/v1/radpop_radio_cliente_fibra/${cliente_fibra.id}`;
-        const header = {headers:{'Content-Type': 'application/json',
-        Authorization: 'Basic ' + new Buffer.from(token).toString('base64'),
+        Authorization: 'Basic ' + process.env.TOKEN
         }}
         cliente_fibra.porta_ftth = porta;
         const req = await axios.put(url, cliente_fibra, header);
@@ -119,11 +108,7 @@ module.exports = class Onu{
             await this.getLogin();
         }
         if(!this.cliente){
-            var cliente = await snmp.getClient(this.login.id_cliente);
-            if(cliente.data.registros[0])
-            {
-                this.cliente = cliente.data.registros[0];
-            }
+            this.cliente = await api.getClient(this.login.id_cliente);
         }       
     }
 
@@ -135,7 +120,7 @@ module.exports = class Onu{
             var onuData = o[0];
             return onuData.value;
         } catch (error) {
-            return false;
+            throw new Error('CHECK ONU STATUS ERROR');
         }
     }
 
@@ -156,7 +141,7 @@ module.exports = class Onu{
     async updateOpticalPower()
     {
         try {
-            this.optical = await fh.getOnuOpticalPower(this.options, this.slot, this.pon, this.onuId);
+            this.optical = await snmp.getOnuOpticalPower(this.options, this.slot, this.pon, this.onuId);
         }
         catch(err){
             console.log('ERRO ao atualizar Optical Power')
@@ -164,8 +149,9 @@ module.exports = class Onu{
         }
     }
 
-    async updatePorta(login){
-        const update = await this.updatePortaClienteFibra(login.onu_mac, login.ftth_porta);
+    async updatePorta(login:any){
+        try {
+            const update = await this.updatePortaClienteFibra(login.onu_mac, login.ftth_porta);
         if(update){
             const update_login = await this.updateLogin(login);
             if(update_login){
@@ -174,7 +160,11 @@ module.exports = class Onu{
             }
             return false;
         }
-        return false;
+        } catch (error) {
+            return false;
+        }
+        
+        
     }
     
 }

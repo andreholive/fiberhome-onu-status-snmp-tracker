@@ -13,7 +13,7 @@ function Main() {
     useEffect(()=> {
         if(!socket)setSocket(startSocket());
         if(!handler && socket)setHandler(startHandlers({socket}));
-    },[socket])
+    },[socket]);
 
     return (
         <div className='main'>

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import ResultCliente from './ResultCliente';
 
-function Clientes({socket, handler}) {
+function Clientes({socket, handler,setSearching}) {
 
 const [results, setResults] =  useState([]);
 
@@ -12,11 +12,17 @@ function goto(login){
 }
 
 useEffect(() => {
+    let isCancelled = false;
+    if(!isCancelled)
     if(socket){
         socket.on('cliente', data => {
-            setResults(data)
+            setResults(data);
+            setSearching(false)
           });
     }
+    return () => {
+        isCancelled = true;
+      };
   },[socket]);
 
  return (

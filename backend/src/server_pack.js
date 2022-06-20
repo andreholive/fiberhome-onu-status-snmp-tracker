@@ -1,8 +1,7 @@
 const snmp = require('net-snmp');
 const axios = require('axios');
-const config = require('./config.json');
 
-const token = config.token;
+const token = process.env.TOKEN;
 
 function getHeader(){
     return {headers:{'Content-Type': 'application/json',
@@ -30,7 +29,7 @@ async function get(oids, options) {
 
 async function getLogin(mac) {
         
-    const url = config.ixc_api+"/webservice/v1/radusuarios";
+    const url = process.env.IXC_API+"/webservice/v1/radusuarios";
         const body =
             { 
             qtype: 'onu_mac',
@@ -46,7 +45,7 @@ async function getLogin(mac) {
 
 async function getClient(id) {
         
-    const url = `${config.ixc_api}/webservice/v1/cliente`;
+    const url = `${process.env.IXC_API}/webservice/v1/cliente`;
         const body =
             { 
             qtype: 'cliente.id',
@@ -62,7 +61,7 @@ async function getClient(id) {
 
 async function getLoginsByCTO(id_caixa_ftth) {
         
-    const url = `${config.ixc_api}/webservice/v1/radusuarios`;
+    const url = `${process.env.IXC_API}/webservice/v1/radusuarios`;
         const body =
             { 
             qtype: 'id_caixa_ftth',
@@ -77,7 +76,7 @@ async function getLoginsByCTO(id_caixa_ftth) {
 }
 
 async function getLoginbyClient(client, next) {
-    const url = `${config.ixc_api}/webservice/v1/radusuarios`;
+    const url = `${process.env.IXC_API}/webservice/v1/radusuarios`;
         const body =
             { 
             qtype: 'id_cliente',
@@ -95,7 +94,7 @@ async function getLoginbyClient(client, next) {
 
 async function busca_cliente(razao) {
     
-    const url = `${config.ixc_api}/webservice/v1/cliente`;
+    const url = `${process.env.IXC_API}/webservice/v1/cliente`;
         const body =
             { 
             qtype: 'cliente.razao',
@@ -128,7 +127,7 @@ function findOnuinOltsbyMac(olts, mac){
 }
 
 async function busca_caixa(desc, olts) {
-    const url = `${config.ixc_api}/webservice/v1/rad_caixa_ftth`;
+    const url = `${process.env.IXC_API}/webservice/v1/rad_caixa_ftth`;
     const body =
         { 
         qtype: 'descricao',
@@ -173,5 +172,4 @@ module.exports = {
     busca_caixa,
     busca_cliente,
     getHeader
-    
 }

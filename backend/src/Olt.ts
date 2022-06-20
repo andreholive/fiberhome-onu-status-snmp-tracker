@@ -1,8 +1,22 @@
-const fh = require('snmp-fiberhome');
-const Onu = require('./Onu');
+import {Snmp} from './snmp'
+import {Onu} from './Onu';
+import {User} from './User'
+const snmp = new Snmp();
 
-module.exports = class Olt{
-    constructor(data){
+interface Message{
+    type: string;
+    data: any
+}
+
+export class Olt{
+    id: number;
+    cidade: string;
+    options: any;
+    onus: Onu[];
+    users: User[];
+    scanNum: number;
+    scanning: boolean;
+    constructor(data:any){
         this.id = data.id,
         this.cidade = data.cidade,
         this.options = data.options,
@@ -11,20 +25,23 @@ module.exports = class Olt{
         this.scanNum = 1;
         this.scanning = false;
     }
+    
 
 
-   isScanning = () => this.scanning;
+   isScanning = ():boolean => this.scanning;
+   
 
-   send = async (obj) => {
+   send = async (msg:Message) => {
+    const {type, data} = msg;
     Object.values(this.users).map(async (user) => {
-        await user.socket.emit(obj.type, obj.data)
+        user.emitMessage({type, data})
     });
    }
 
     async getAuthorizedOnus()
     { 
         try {
-            const authOnus = await fh.getAuthorizedOnus(this.options);
+            const authOnus = await snmp.getAuthorizedOnus(this.options);
             var i = 0;
             for(const onu of authOnus){
                 this.onus[i] = new Onu({...onu, options: this.options, index: i});
@@ -36,12 +53,13 @@ module.exports = class Olt{
         }
         
     }
+    
 
-    getOnus(){
+    getOnus():Onu[]{
         return this.onus;
     }
     
-    findOnuByMac(mac){
+    findOnuByMac(mac:any):Onu{
         const index = this.onus.findIndex((onu, index) => {
             if(onu.macAddress === mac){
                 return index;
@@ -50,7 +68,7 @@ module.exports = class Olt{
         return this.onus[index];
     }
 
-    updateOnuStatus = async i =>{
+    updateOnuStatus = async (i : number = 0) =>{
         if(this.onus && i < Object.keys(this.onus).length){
             const status = await this.onus[i].checkOnuStatus();
             this.onus[i].setStatus(status);
@@ -60,18 +78,17 @@ module.exports = class Olt{
         console.log(`Status das ONUs de ${this.cidade} Atualizados!`);
     }
 
-    async startScan(user){
+    async startScan(user:User){
         this.users.push(user);
         if(!this.isScanning())
         {
-            await this.updateOnuStatus(0);
+            await this.updateOnuStatus();
             this.scanning = true;
-            this.scan(0);
+            this.scan();
         }
     }
 
-    stopScan(user){
-        
+    stopScan(user:User){
         const index = this.users.indexOf(user);
         this.users.splice(index, 1);
         if(Object.values(this.users).length == 0){
@@ -80,7 +97,7 @@ module.exports = class Olt{
         }
     }
     
-    scan = async i =>{
+    scan = async (i:number = 0) =>{
         if(i == 0){
             console.log('SCANNING', this.scanNum);
             this.send({type: 'scan', data: this.scanNum});
@@ -98,7 +115,7 @@ module.exports = class Olt{
                 await this.send({type: 'connection', data: onu});
             }
             if(i == (this.onus.length-1)){
-                this.scan(0);
+                this.scan();
                 return; 
             }
             await this.scan(i+1);

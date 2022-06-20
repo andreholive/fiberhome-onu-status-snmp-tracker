@@ -48,7 +48,7 @@ sockets.on('connection', (socket) => {
         users[num].stopScan()
         delete users[num];
     })
-})
+});
 
 server.listen(3001, async () => {  
     console.log(`Iniciando Servidor...`);
@@ -63,6 +63,8 @@ server.listen(3001, async () => {
         }
         
     }
+
+
     console.log(`Server Listening on port: 3001`);
 })
 

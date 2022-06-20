@@ -6,18 +6,25 @@ import './caixa.css'
 
 let conns_caixa = [];
 
-function Caixa({socket, handler}) {
+function Caixa({socket, handler, setSearching}) {
 
 const [ports, setPorts] = useState([]);
 
 const [caixa, setCaixa] = useState({});
 
 useEffect(() => {
+  let isCancelled = false;
+  if(!isCancelled){
   if(socket){
     socket.on('caixa', data => {
         insertCaixa(data);
+        setSearching(false)
     });
   }
+  }
+  return () => {
+    isCancelled = false;
+  };
 },[socket]);
 
 useEffect(() => {
