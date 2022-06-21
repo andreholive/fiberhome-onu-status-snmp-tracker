@@ -1,4 +1,4 @@
-const OLTs = [
+export const OLTs = [
     {
         id: 0,
         ativo: 1,
@@ -59,7 +59,4 @@ const OLTs = [
         },
         onus: []
     }
-]
-module.exports = {
-    OLTs
-}
+];

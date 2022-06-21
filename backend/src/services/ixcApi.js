@@ -1,5 +1,6 @@
 import axios from 'axios';
 require('dotenv/config');
+
 export class IxcApi{
 
     getHeader(){
@@ -27,7 +28,7 @@ export class IxcApi{
                 return cliente.data.registros[0];
         }
         catch(error){
-            throw new Error('API GET ERROR');
+            throw new Error('API GET ERROR: error in get client');
         }
         
     }
@@ -49,7 +50,7 @@ export class IxcApi{
             return login.data.registros[0];
         }
         catch(error){
-            throw new Error('API GET ERROR');
+            throw new Error('API GET ERROR: error in get login');
         }
         
     }
@@ -83,10 +84,27 @@ export class IxcApi{
     async updateLogin(login){
         try{
             const url = `${process.env.IXC_API}/webservice/v1/radusuarios/${login.id}`;
-            const update= await axios.put(url, login, this.getHeader());
-            if(update.data.type == 'success'){
-                return true;
-            }
+            const update = await axios.put(url, login, this.getHeader());
+            console.log(update.data);
+            return update.data;
+        }
+        catch(error){
+            throw new Error('API PUT ERROR');
+        }
+    }
+
+    async updatePortaClienteFibra(mac, porta) {
+        try{
+        const cliente_fibra = await this.getClienteFibra(mac);
+        const url = `${process.env.IXC_API}/webservice/v1/radpop_radio_cliente_fibra/${cliente_fibra.id}`;
+        const header = {headers:{'Content-Type': 'application/json',
+        Authorization: 'Basic ' + process.env.TOKEN
+        }}
+        cliente_fibra.porta_ftth = porta;
+        const req = await axios.put(url, cliente_fibra, header);
+        if(req.data.type == 'success'){
+            return true;
+        }
         }
         catch(error){
             throw new Error('API PUT ERROR');

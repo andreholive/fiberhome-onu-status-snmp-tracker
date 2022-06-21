@@ -1,7 +1,7 @@
 import express from "express";
 import { createServer } from 'http';
 import { Server } from "socket.io";
-import {Lobby} from "./lobby"
+import {Lobby} from "./entities/Lobby"
 
 const app = express();
 const server = createServer(app);
