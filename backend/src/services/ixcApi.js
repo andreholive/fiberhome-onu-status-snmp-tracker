@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ApiGetError } from '../errors/ApiErrors';
 require('dotenv/config');
 
 export class IxcApi{
@@ -28,7 +29,7 @@ export class IxcApi{
                 return cliente.data.registros[0];
         }
         catch(error){
-            throw new Error('API GET ERROR: error in get client');
+            throw new ApiGetError('Get Client Error');
         }
         
     }
@@ -50,7 +51,7 @@ export class IxcApi{
             return login.data.registros[0];
         }
         catch(error){
-            throw new Error('API GET ERROR: error in get login');
+            throw new ApiGetError('Get login Error');
         }
         
     }
@@ -77,7 +78,7 @@ export class IxcApi{
             throw new Error('NO DATA ERROR');
         }
         catch(error){
-            throw new Error('API GET ERROR');
+            throw new ApiGetError('Get Fiber Clients Error');
         }
     }
 
@@ -109,6 +110,99 @@ export class IxcApi{
         catch(error){
             throw new Error('API PUT ERROR');
         }
+    }
+
+    async getLoginbyClient(client, next) {
+        const url = `${process.env.IXC_API}/webservice/v1/radusuarios`;
+            const body =
+                { 
+                qtype: 'id_cliente',
+                query: client.id,
+                oper: '=',
+                page: '1',
+                rp: '50',
+                sortname: 'id_cliente',
+                sortorder: 'desc'
+                };
+        const login = await axios.post(url, body, this.getHeader());
+        client.logins = login.data.registros;
+        await next();
+    }
+
+    async getLoginsToClientsList(clientList){
+        if(clientList && clientList.length != 0){
+            const exec = async (i = 0) =>{
+            clientList && i < clientList.length &&
+                  await this.getLoginbyClient(clientList[i], async () => await exec(i+1));
+            }
+            await exec();
+        }
+    }
+
+    async findClientsByName(razao) {
+        try{
+            const url = `${process.env.IXC_API}/webservice/v1/cliente`;
+            const body =
+                { 
+                qtype: 'cliente.razao',
+                query: razao,
+                oper: 'L',
+                page: '1',
+                rp: '50',
+                sortname: 'cliente.razao',
+                sortorder: 'desc'
+                };
+                const res = await axios.post(url, body, this.getHeader());
+                var data = res.data.registros;
+                return data;
+        }
+        catch(error){
+            throw new ApiGetError('Find Client By Name error');
+        }   
+    }
+
+    async searchCaixa(desc) {
+        try{
+            const url = `${process.env.IXC_API}/webservice/v1/rad_caixa_ftth`;
+            const body =
+                { 
+                qtype: 'descricao',
+                query: desc,
+                oper: 'L',
+                page: '1',
+                rp: '20',
+                sortname: 'descricao',
+                sortorder: 'desc',
+                };
+            const caixa = await axios.post(url, body, this.getHeader());
+            return caixa.data.registros[0];
+        }
+        catch(error){
+            throw new ApiGetError('Find Caixa Error');
+        }
+        
+    }
+
+    async getLoginsByCTO(id_caixa_ftth) {
+        try{
+            const url = `${process.env.IXC_API}/webservice/v1/radusuarios`;
+            const body =
+                { 
+                qtype: 'id_caixa_ftth',
+                query: id_caixa_ftth,
+                oper: '=',
+                page: '1',
+                rp: '32',
+                sortname: 'onu_mac',
+                sortorder: 'desc'
+                };
+            var logins = await axios.post(url, body, this.getHeader());
+            return logins.data.registros;
+        }
+        catch(error){
+            throw new ApiGetError('Find Logins By Cto Error');
+        }
+        
     }
 }
    

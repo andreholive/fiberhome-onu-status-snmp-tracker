@@ -86,6 +86,10 @@ export class Onu{
         return this.cliente;
     }
 
+    getOnuToSend():OnuToSend{
+        return new OnuToSend(this);
+    }
+
     async getLogin(){
         try{
             this.login = await api.getLogin(this.macAddress);
@@ -128,7 +132,7 @@ export class Onu{
                 if(status == 1){ 
                     await this.getOpticalPower();
                 }
-                this.olt.send({type: 'connection', data: new OnuToSend(this)});
+                this.olt.send({type: 'connection', data: this.getOnuToSend()});
             }
        } catch (error) {
             throw new Error('CHECK ONU STATUS ERROR');
@@ -146,12 +150,19 @@ export class Onu{
 
     async updateOpticalPower()
     {
+        if(this.getStatus() != 1)return;
         try {
             this.optical = await snmp.getOnuOpticalPower(this.options, this.slot, this.pon, this.onuId);
         }
         catch(err){
             console.log('ERRO ao atualizar Optical Power');
         }
+    }
+
+    async updateAllOnuDataFromServer(){
+        await this.updateStatus();
+        await this.updateOpticalPower();
+        await this.updateLoginAndClient();
     }
 
     async updatePorta(login:any){

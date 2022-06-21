@@ -3,12 +3,14 @@ import {Olt} from './Olt';
 import { Onu } from "./Onu";
 import {User} from "./User";
 import {OLTs} from '../OltsData';
-const snmp = require('../server_pack');
+import { IxcApi } from "../services/ixcApi";
+const api = new IxcApi();
 
 interface Message{
     type: string;
     data: any
 }
+
 export interface Lobby{
     sockets: Server;
     olts: Olt[];
@@ -68,6 +70,36 @@ export class Lobby{
         }
     }
 
+    async searchClient(name: string){
+        const clientList = await api.findClientsByName(name);
+        await api.getLoginsToClientsList(clientList);
+        return clientList;
+    }
+
+    async findOnusByLoginList(loginList:any[]):Promise<Onu[]>{
+        let onus: Onu[] = [];
+        const exec = async (i:number) =>{
+            if(loginList && i < loginList.length){
+                const onu = this.findOnuByMacInOlts(loginList[i].onu_mac);
+                if(onu){
+                    await onu.updateAllOnuDataFromServer();
+                    onus.push(onu);
+                }
+                await exec(i+1);
+            }
+        }
+        await exec(0);
+        return onus;
+    }
+
+    async searchCaixa(description:string){
+        const caixa = await api.searchCaixa(description);
+        const ctoLogins = await api.getLoginsByCTO(caixa.id);
+        const onuList = await this.findOnusByLoginList(ctoLogins);
+        const onus = onuList.map(onu => onu.getOnuToSend());
+        return {caixa, onus}
+    }
+
     startSocket = () => {
 
         this.sockets.on('connection', (socket:any) => { 
@@ -79,21 +111,21 @@ export class Lobby{
                 num != -1 ? user.startScan(this.olts[num]) : user.stopScan();
             });
     
-            socket.on('caixa', async (caixa:any) => {
-                const data = await snmp.busca_caixa(caixa, this.olts);
+            socket.on('caixa', async (caixa:string) => {
+                const data = await this.searchCaixa(caixa);
                 this.sendMsgToUser(user, {type:'caixa', data});
             });
     
             socket.on('updatePorta', async (login:any) => {
                 const onu = this.findOnuByMacInOlts(login.onu_mac);
                 if(onu){
-                    const resp = await onu.updatePorta(login);
+                    await onu.updatePorta(login);
                 }
             });
 
-            socket.on('cliente', async (data:any) => {
-                const res = await snmp.busca_cliente(data);
-                socket.emit('cliente', res);
+            socket.on('cliente', async (name:any) => {
+                const clientList = await this.searchClient(name);
+                socket.emit('cliente', clientList);
             });
 
             socket.on('disconnect', () => this.removeUser(socket));

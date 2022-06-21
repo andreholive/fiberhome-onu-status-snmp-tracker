@@ -29,7 +29,7 @@ export class User{
     }
 
     stopScan(){
-        if(this.oltScan.isScanning()){
+        if(this.oltScan?.isScanning()){
             console.log('User '+this.id+' PAROU scan na Olt de '+this.oltScan.cidade);
             this.oltScan.stopScan(this);
         }
