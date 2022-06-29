@@ -1,116 +1,83 @@
-import {Snmp} from '../services/snmp'
-import {Onu} from './Onu';
-import {User} from './User'
-const snmp = new Snmp();
+import IOnuStatusObserver from '../interfaces/IOnuStatusObserver';
+import { Onu } from './Onu';
 
-interface Message{
-    type: string;
-    data: any
+export type OltOptions = {
+    idIxc: number,
+    ip: string,
+    community: string,
+    port: number,
+    trapPort: number,
+    enableWarnings: boolean,
+    enableLogs: boolean,      
 }
 
 export class Olt{
-    id: number;
-    cidade: string;
-    options: any;
-    onus: Onu[];
-    users: User[];
-    scanNum: number;
-    scanning: boolean;
+    private onus:Onu[] = [];
+    private _id: any;
+    private city: any;
+    private _options: OltOptions;
+    private _scanTimes: number = 0;
+    private _observers: IOnuStatusObserver[] = [];
     constructor(data:any){
-        this.id = data.id,
-        this.cidade = data.cidade,
-        this.options = data.options,
-        this.onus = [];
-        this.users = [];
-        this.scanNum = 1;
-        this.scanning = false;
+        this._id = data.options.idIxc;
+        this.city = data.cidade;
+        this._options = data.options;
+    }
+
+    public get id(){
+        return this._id
+    }
+
+    public get options():OltOptions{
+        return this._options;
     }
     
-
-
-    isScanning = ():boolean => this.scanning;
-
-    getOnus():Onu[]{
+    public get onuList():Onu[] {
         return this.onus;
     }
-   
-    send = async (msg:Message) => {
-        const {type, data} = msg;
-        Object.values(this.users).map(async (user) => {
-            user.emitMessage({type, data})
-        });
+
+    public get cidade():Onu[] {
+        return this.city;
     }
 
-    async getAuthorizedOnus()
-    { 
-        try {
-            const authOnus = await snmp.getAuthorizedOnus(this.options);
-            var i = 0;
-            for(const onu of authOnus){
-                this.onus[i] = new Onu({...onu, options: this.options, index: i, olt: this});
-                i++;
-            }
-            console.log(`ONUs de ${this.cidade} Atualizadas!`);
-        } catch (error) {
-            console.log(`Erro ao conectar a ${this.cidade}`);
+    public get isScanning():boolean{
+        if(this.observers.length != 0){
+            return true
         }
-        
-    }   
-    
-    findOnuByMac(mac:any):Onu{
-        const index = this.onus.findIndex((onu, index) => {
-            if(onu.macAddress === mac){
-                return index;
-            }
-        });
+        return false;
+    }
+
+    public get observers():IOnuStatusObserver[]{
+        return this._observers;
+    }
+
+    public get scanTimes(){
+        return this._scanTimes
+    }
+
+    public set observers(observerList: IOnuStatusObserver[]){
+        this._observers = observerList;
+    }
+
+    public set onuList(onulist: Onu[]){
+        this.onus = onulist;
+    }
+
+    public getOnuByIndex(index:number){
         return this.onus[index];
     }
 
-    async startScan(user:User){
-        this.users.push(user);
-        if(!this.isScanning())
-        {
-            await this.updateOnuStatus();
-            this.scanning = true;
-            this.scan();
-        }
+    public getOnuByMac(mac:any):Onu{
+        return this.onuList.filter(onu => onu.macAddress == mac)[0];
     }
 
-    stopScan(user:User){
-        const index = this.users.indexOf(user);
-        this.users.splice(index, 1);
-        if(Object.values(this.users).length == 0){
-            this.scanning = false;
-            this.scanNum = 1;
-        }
+    public addScanTime(){
+        this._scanTimes++;
     }
 
-    updateOnuStatus = async (i : number = 0) =>{
-        if(this.onus && i < Object.keys(this.onus).length){
-            await this.onus[i].updateStatus();
-            await this.updateOnuStatus(i+1);
-            return;
-        }
-        console.log(`Status das ONUs de ${this.cidade} Atualizados!`);
+    public resetScanTimes(){
+        this._scanTimes = 0;
     }
-    
-    scan = async (i:number = 0) =>{
-        if(i == 0){
-            console.log('SCANNING', this.scanNum);
-            this.send({type: 'scan', data: this.scanNum});
-            this.scanNum++;
-        }
-        if(this.isScanning() && this.onus && i < Object.keys(this.onus).length){
-            const onu = this.onus[i];
-            await onu.checkOnuStatusChange();
-            if(i == (this.onus.length-1)){
-                this.scan();
-                return; 
-            }
-            await this.scan(i+1);
-        }
-            
-    }
-        
-    
+
+
 }

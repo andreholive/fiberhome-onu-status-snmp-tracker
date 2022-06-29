@@ -1,38 +1,37 @@
 import { Socket } from "socket.io";
-import { Olt } from "./Olt";
 
-interface Message{
+export interface Message{
     type: string;
     data: any
 }
 
-export interface User {
-    id: string;
-    socket: Socket;
-    oltScan: Olt;
-}
-
 export class User{
-    constructor(data:any){
-        this.id = data.socket.conn.id;
-        this.socket = data.socket;
+    private _id: string;
+    private _socket: Socket;
+    private _oltScan: number = -1;
+    constructor(socket:any){
+        this._id = socket?.conn.id ;
+        this._socket = socket || null;
     }
 
-    emitMessage = (msg:Message) => {
-        this.socket.emit(msg.type, msg.data)
+    public get id(){
+        return this._id;
     }
 
-    startScan(olt: Olt){
-        this.oltScan = olt;
-        console.log('User '+this.id+' INICIOU scan na Olt de '+ this.oltScan.cidade);
-        olt.startScan(this);
+    public get socket(){
+        return this._socket
     }
 
-    stopScan(){
-        if(this.oltScan?.isScanning()){
-            console.log('User '+this.id+' PAROU scan na Olt de '+this.oltScan.cidade);
-            this.oltScan.stopScan(this);
-        }
-        
+    public get oltScan():number{
+        return this._oltScan;
     }
+
+    public set oltScan(oltNum:number){
+        this._oltScan = oltNum
+    }
+
+    public isConnected(){
+        return this.socket.connected;
+    }
+
 }

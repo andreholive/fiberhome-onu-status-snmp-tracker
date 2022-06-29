@@ -1,21 +1,22 @@
-import express from "express";
-import { createServer } from 'http';
-import { Server } from "socket.io";
-import {Lobby} from "./entities/Lobby"
+import FiberHomeSnmp from './apis/FiberHomeSnmp';
+import Core from './Core'
+import SnmpInterface from './interfaces/SnmpInterface';
+import OltService from './services/OltService';
+import UserController from './controllers/UserController';
+import WebSocketService from './services/WebSocketService';
+import WebSocket from './WebSocket';
+import OnuService from './services/OnuService';
+import  IxcApi  from './apis/IxcApi';
+import ProviderApiInterface from './interfaces/ProviderApiInterface';
 
-const app = express();
-const server = createServer(app);
-const sockets = new Server(server, {
-    cors: {
-      origin: "*",
-      methods: ["GET", "POST"]
-    }
-  });
+const providerApi: ProviderApiInterface = new IxcApi();
+const snmp: SnmpInterface = new FiberHomeSnmp();
+const webSocket: WebSocket = new WebSocket();
 
-server.listen(3001, async () => { 
-    console.log(`Iniciando Servidor...`);
-    const lobby = new Lobby(sockets);
-    lobby.startLobby();   
-    console.log(`Server Listening on port: 3001`);
-    
-})
+const onuService = new OnuService(providerApi)
+const oltService = new OltService(snmp, onuService);
+const userManager = new UserController(oltService);
+const webSocketService: WebSocketService = new WebSocketService(userManager);
+
+const core = new Core(webSocket, webSocketService, oltService);
+core.start();

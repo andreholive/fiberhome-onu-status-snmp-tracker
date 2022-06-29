@@ -1,177 +1,84 @@
-import { IxcApi } from "../services/ixcApi";
-import {Snmp} from '../services/snmp'
-import { Olt } from "./Olt";
-require('dotenv/config');
-const api = new IxcApi();
-const snmp = new Snmp();
+import { OltOptions } from "./Olt";
 
-class OnuToSend{
-    index: number;
-    onuIndex: number;
-    status: number;
-    macAddress: any;
-    slot: number;
-    pon: number;
-    onuId: number;
-    login: any;
-    options: any;
-    optical: any;
-    cliente: any;
-    fibra: any;
-    constructor(data:Onu){
-        this.index = data.index;
-        this.onuIndex = data.onuIndex,
-        this.macAddress = data.macAddress,
-        this.slot = data.slot,
-        this.pon = data.pon,
-        this.onuId = data.onuId,
-        this.status = data.status,
-        this.options = data.options,
-        this.login = data.login;
-        this.optical = data.optical;
-        this.cliente = data.cliente;
-        this.fibra = data.fibra;
-    }
+export type OnuType = {
+    _onuIndex: number,
+    macAddress: string,
+    slot: number,
+    pon: number,
+    onuId: number
 }
 
-export class Onu{
-    index: number;
-    onuIndex: number;
-    status: number;
-    macAddress: any;
+export type OnuOpticalData = {
+    temperature: number,
+    voltage: number,
+    currTxBias: number,
+    txPower: number,
+    rxPower: number
+}
+
+export type OnuLoginData = {
+    id_cliente: number,
+    nome: string,
+    id_caixa_ftth: number,
+    ftth_porta: number,
+    sinal_rx: number,
+    sinal_tx: number,
+    pppoe: string,
+    senha: string,
+    online: boolean,
+    ip: string,
+    cidade: string,
+    bairro: string,
+    latitude: number,
+    longitude: number
+}
+
+export class Onu {
+    _onuIndex: number;
+    status: number = 0;
     slot: number;
     pon: number;
     onuId: number;
-    login: any;
-    options: any;
-    optical: any;
-    cliente: any;
-    fibra: any;
-    olt: Olt;
-    constructor(data:any){
-        this.index = data.index;
-        this.onuIndex = data._onuIndex,
-        this.macAddress = data.macAddress,
-        this.slot = data.slot,
-        this.pon = data.pon,
-        this.onuId = data.onuId,
-        this.status = 0,
-        this.options = data.options,
-        this.login = null;
-        this.optical = null;
-        this.cliente = null;
-        this.fibra = null;
-        this.olt = data.olt;
+    private _optical!: OnuOpticalData;
+    private _loginData!: OnuLoginData;
+    private _macAddress: any;
+    constructor(onu: OnuType, private readonly opt:OltOptions){
+        this._onuIndex = onu._onuIndex;
+        this._macAddress = onu.macAddress;
+        this.slot = onu.slot;
+        this.pon = onu.pon;
+        this.onuId = onu.onuId;
     }
 
+    public get macAddress(){
+        return this._macAddress;
+    }
 
-    
+    public set optical(opt: OnuOpticalData){
+        this._optical = opt;
+    }
+
+    public get optical():OnuOpticalData{
+        return this._optical;
+    }
+
+    public get options(){
+        return this.opt;
+    }
+
+    public get loginData(){
+        return this._loginData;
+    }
+
+    public set loginData(loginData:any){
+        this._loginData = loginData;
+    }
+
     setStatus(status:number){
         this.status = status;
     }
 
-    getStatus(){
-        return this.status;
+    setOpticalPower(opticalPower: OnuOpticalData){
+        this.optical = opticalPower;
     }
-
-    setLogin(login:any){
-        this.login = login;
-    }
-
-    getOpticalPower() {
-        return this.optical;
-    }
-
-    getCliente() {
-        return this.cliente;
-    }
-
-    getOnuToSend():OnuToSend{
-        return new OnuToSend(this);
-    }
-
-    async getLogin(){
-        try{
-            this.login = await api.getLogin(this.macAddress);
-        }
-        catch(error){
-            console.log(error)
-        }
-    }
-
-    async updateLogin(login:any){
-        try{
-            if(await api.updateLogin(login)){
-                await this.getLogin();
-                return true;
-            }
-        }catch(error){
-            throw new Error('UPDATE LOGIN ERROR');
-        }
-    }
-
-    async updateLoginAndClient(){
-        if(this.login || this.cliente){
-            return;
-        }
-        try{
-            this.login = await api.getLogin(this.macAddress);
-            this.cliente = await api.getClient(this.login.id_cliente);
-        }
-        catch(error){
-            console.log(error)
-        }      
-    }
-
-    async checkOnuStatusChange(){
-        try {
-            var status = await snmp.getOnuStatus(this.onuIndex, this.options);
-            if(status != this.getStatus()){
-                this.setStatus(status);
-                await this.updateLoginAndClient();
-                if(status == 1){ 
-                    await this.getOpticalPower();
-                }
-                this.olt.send({type: 'connection', data: this.getOnuToSend()});
-            }
-       } catch (error) {
-            throw new Error('CHECK ONU STATUS ERROR');
-        }
-    }
-
-    async updateStatus(){
-        try {
-            var status = await snmp.getOnuStatus(this.onuIndex, this.options);
-            this.setStatus(status);
-        } catch (error) {
-            console.log('Erro ao atualizar status da ONU');
-        }
-    }
-
-    async updateOpticalPower()
-    {
-        if(this.getStatus() != 1)return;
-        try {
-            this.optical = await snmp.getOnuOpticalPower(this.options, this.slot, this.pon, this.onuId);
-        }
-        catch(err){
-            console.log('ERRO ao atualizar Optical Power');
-        }
-    }
-
-    async updateAllOnuDataFromServer(){
-        await this.updateStatus();
-        await this.updateOpticalPower();
-        await this.updateLoginAndClient();
-    }
-
-    async updatePorta(login:any){
-        try {
-            await api.updatePortaClienteFibra(login.onu_mac, login.ftth_porta);
-            await this.updateLogin(login);
-        } catch (error) {
-            
-        }
-    }
-    
 }
